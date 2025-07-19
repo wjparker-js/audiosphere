@@ -2,8 +2,11 @@
 
 import { Play, MoreHorizontal, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 interface Track {
   id: number;
@@ -16,53 +19,12 @@ interface Track {
 
 interface TrackListProps {
   tracks?: Track[];
+  loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-// Sample data matching your current interface
-const sampleTracks: Track[] = [
-  {
-    id: 1,
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    album: "After Hours",
-    duration: "3:20",
-    playCount: 1200000000
-  },
-  {
-    id: 2,
-    title: "Don't Start Now",
-    artist: "Dua Lipa",
-    album: "Future Nostalgia",
-    duration: "3:03",
-    playCount: 980000000
-  },
-  {
-    id: 3,
-    title: "Levitating",
-    artist: "Dua Lipa",
-    album: "Future Nostalgia",
-    duration: "3:23",
-    playCount: 850000000
-  },
-  {
-    id: 4,
-    title: "Save Your Tears",
-    artist: "The Weeknd",
-    album: "After Hours",
-    duration: "3:35",
-    playCount: 720000000
-  },
-  {
-    id: 5,
-    title: "SICKO MODE",
-    artist: "Travis Scott",
-    album: "ASTROWORLD",
-    duration: "5:12",
-    playCount: 650000000
-  }
-];
-
-export function TrackList({ tracks = sampleTracks }: TrackListProps) {
+export function TrackList({ tracks, loading, error, onRetry }: TrackListProps) {
   const [hoveredTrack, setHoveredTrack] = useState<number | null>(null);
 
   const formatPlayCount = (count: number) => {
@@ -75,6 +37,34 @@ export function TrackList({ tracks = sampleTracks }: TrackListProps) {
     }
     return count.toString();
   };
+
+  // Handle loading state
+  if (loading) {
+    return <LoadingState count={1} type="list" />;
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <ErrorState
+        message={error}
+        onRetry={onRetry}
+      />
+    );
+  }
+
+  // Handle empty state
+  if (!tracks || tracks.length === 0) {
+    return (
+      <EmptyState
+        icon={Play}
+        title="No tracks yet"
+        description="Upload some music to see popular tracks here."
+        actionText="Upload Music"
+        onAction={() => console.log('Upload music')}
+      />
+    );
+  }
 
   return (
     <div className="space-y-0.5">

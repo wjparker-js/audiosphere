@@ -5,203 +5,259 @@ import { ContentCard } from '@/components/library/ContentCard';
 import { TrackList } from '@/components/music/TrackList';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { SearchField } from '@/components/ui/SearchField';
+import { EmptyState } from '@/components/ui/empty-state';
+import { LoadingState } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
 import { ContentItem, ContentAction } from '@/types/library';
 import { BlogPost, BlogAction } from '@/types/blog';
-import { Home, Music, List, FileText } from 'lucide-react';
+import { Home, Music, List, FileText, Album, Users, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Sample data converted to match library format
-const recentlyPlayedAlbums: ContentItem[] = [
-  {
-    id: '1',
-    type: 'album',
-    title: "The Grand Sessions",
-    artist: "Midnight",
-    coverArt: "https://via.placeholder.com/300x300/1f2937/ffffff?text=The+Grand+Sessions",
-    trackCount: 12,
-    genre: "Electronic",
-    status: 'published',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    userId: 'user1'
-  },
-  {
-    id: '2',
-    type: 'album',
-    title: "Waffles Greatest Hits",
-    artist: "The Midnight",
-    coverArt: "https://via.placeholder.com/300x300/1f2937/ffffff?text=Waffles+Greatest+Hits",
-    trackCount: 15,
-    genre: "Synthwave",
-    status: 'published',
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-10'),
-    userId: 'user1'
-  },
-  {
-    id: '3',
-    type: 'album',
-    title: "Endless Summer",
-    artist: "The Midnight",
-    coverArt: "https://via.placeholder.com/300x300/1f2937/ffffff?text=Endless+Summer",
-    trackCount: 10,
-    genre: "Synthwave",
-    status: 'published',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-08'),
-    userId: 'user1'
-  },
-  {
-    id: '4',
-    type: 'album',
-    title: "Neon Nights",
-    artist: "Neon Dreams",
-    coverArt: "https://via.placeholder.com/300x300/1f2937/ffffff?text=Neon+Nights",
-    trackCount: 8,
-    genre: "Electronic",
-    status: 'published',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-05'),
-    userId: 'user1'
-  },
-  {
-    id: '5',
-    type: 'album',
-    title: "After Hours",
-    artist: "The Weeknd",
-    coverArt: "https://via.placeholder.com/300x300/1f2937/ffffff?text=After+Hours",
-    trackCount: 14,
-    genre: "R&B",
-    status: 'published',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    userId: 'user1'
-  }
-];
-
-const madeForYouPlaylists: ContentItem[] = [
-  {
-    id: '6',
-    type: 'playlist',
-    title: "Big Stuff",
-    description: "Created from track menu",
-    coverArt: "/playlists/big-stuff.jpg",
-    trackCount: 25,
-    isPublic: true,
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-12'),
-    userId: 'user1'
-  },
-  {
-    id: '7',
-    type: 'playlist',
-    title: "My Playlist #1",
-    description: "Created by you",
-    coverArt: "/playlists/my-playlist-1.jpg",
-    trackCount: 18,
-    isPublic: false,
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-10'),
-    userId: 'user1'
-  }
-];
-
-const blogPosts: BlogPost[] = [
-  {
-    id: '1',
-    title: "AI Lamont",
-    excerpt: "An incredible story of Garry Lamont...",
-    content: "Full blog content here...",
-    featuredImage: "https://via.placeholder.com/400x200/1f2937/ffffff?text=AI+Lamont",
-    status: 'published',
-    publishedAt: new Date('2024-01-15'),
-    viewCount: 1250,
-    commentCount: 23,
-    tags: ['AI', 'Music', 'Technology'],
-    category: "Music News",
-    readTime: 5,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    userId: 'user1'
-  },
-  {
-    id: '2',
-    title: "Andy Capp",
-    excerpt: "Capp for real...",
-    content: "Full blog content here...",
-    featuredImage: "https://via.placeholder.com/400x200/1f2937/ffffff?text=Andy+Capp",
-    status: 'published',
-    publishedAt: new Date('2024-01-12'),
-    viewCount: 890,
-    commentCount: 15,
-    tags: ['Review', 'Artist'],
-    category: "Reviews",
-    readTime: 3,
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-12'),
-    userId: 'user1'
-  },
-  {
-    id: '3',
-    title: "Home",
-    excerpt: "Garry's home album...",
-    content: "Full blog content here...",
-    featuredImage: "https://via.placeholder.com/400x200/1f2937/ffffff?text=Home",
-    status: 'published',
-    publishedAt: new Date('2024-01-10'),
-    viewCount: 654,
-    commentCount: 8,
-    tags: ['Album', 'Review'],
-    category: "Music News",
-    readTime: 4,
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-10'),
-    userId: 'user1'
-  }
-];
+// Content section state interface
+interface ContentSection {
+  loading: boolean;
+  error: string | null;
+  data: any[];
+  isEmpty: boolean;
+}
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [albums, setAlbums] = useState<ContentItem[]>(recentlyPlayedAlbums);
-  const [loading, setLoading] = useState(false);
+  
+  // Separate state for each content section
+  const [albums, setAlbums] = useState<ContentSection>({
+    loading: true,
+    error: null,
+    data: [],
+    isEmpty: false
+  });
+  
+  const [playlists, setPlaylists] = useState<ContentSection>({
+    loading: true,
+    error: null,
+    data: [],
+    isEmpty: false
+  });
+  
+  const [blogPosts, setBlogPosts] = useState<ContentSection>({
+    loading: true,
+    error: null,
+    data: [],
+    isEmpty: false
+  });
+  
+  const [tracks, setTracks] = useState<ContentSection>({
+    loading: true,
+    error: null,
+    data: [],
+    isEmpty: false
+  });
 
   // Fetch albums from API
-  useEffect(() => {
-    const fetchAlbums = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/albums');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.albums && data.albums.length > 0) {
-            // Convert API response to ContentItem format
-            const apiAlbums: ContentItem[] = data.albums.map((album: any) => ({
-              id: album.id.toString(),
-              type: 'album' as const,
-              title: album.title,
-              artist: album.artist,
-              coverArt: album.cover_image_url || "https://via.placeholder.com/300x300/1f2937/ffffff?text=" + encodeURIComponent(album.title),
-              trackCount: album.track_count || 0,
-              genre: album.genre_name || album.genre || "Unknown",
-              status: album.status as 'published' | 'draft' | 'private',
-              createdAt: new Date(album.created_at),
-              updatedAt: new Date(album.updated_at),
-              userId: album.created_by?.toString() || 'unknown'
-            }));
-            
-            // Combine API albums with sample albums, with API albums first
-            setAlbums([...apiAlbums, ...recentlyPlayedAlbums]);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching albums:', error);
-        // Keep using sample data if API fails
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAlbums = async () => {
+    setAlbums(prev => ({ ...prev, loading: true, error: null }));
     
+    try {
+      const response = await fetch('/api/albums');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.albums) {
+          // Convert API response to ContentItem format
+          const apiAlbums: ContentItem[] = data.data.albums.map((album: any) => ({
+            id: album.id.toString(),
+            type: 'album' as const,
+            title: album.title,
+            artist: album.artist,
+            coverArt: album.coverImageUrl || null,
+            trackCount: album.trackCount || 0,
+            genre: album.genreName || album.genre || "Unknown",
+            status: album.status as 'published' | 'draft' | 'private',
+            createdAt: new Date(album.createdAt),
+            updatedAt: new Date(album.updatedAt),
+            userId: album.createdBy?.toString() || 'unknown'
+          }));
+          
+          setAlbums({
+            loading: false,
+            error: null,
+            data: apiAlbums,
+            isEmpty: apiAlbums.length === 0
+          });
+        } else {
+          setAlbums({
+            loading: false,
+            error: null,
+            data: [],
+            isEmpty: true
+          });
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching albums:', error);
+      setAlbums({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load albums',
+        data: [],
+        isEmpty: false
+      });
+    }
+  };
+
+  // Fetch playlists from API
+  const fetchPlaylists = async () => {
+    setPlaylists(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      const response = await fetch('/api/playlists');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.playlists) {
+          // Convert API response to ContentItem format
+          const apiPlaylists: ContentItem[] = data.data.playlists.map((playlist: any) => ({
+            id: playlist.id.toString(),
+            type: 'playlist' as const,
+            title: playlist.name,
+            description: playlist.description,
+            coverArt: playlist.coverImageUrl || null,
+            trackCount: playlist.trackCount || 0,
+            isPublic: playlist.isPublic || false,
+            createdAt: new Date(playlist.createdAt),
+            updatedAt: new Date(playlist.updatedAt),
+            userId: playlist.userId?.toString() || 'unknown'
+          }));
+          
+          setPlaylists({
+            loading: false,
+            error: null,
+            data: apiPlaylists,
+            isEmpty: apiPlaylists.length === 0
+          });
+        } else {
+          setPlaylists({
+            loading: false,
+            error: null,
+            data: [],
+            isEmpty: true
+          });
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching playlists:', error);
+      setPlaylists({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load playlists',
+        data: [],
+        isEmpty: false
+      });
+    }
+  };
+
+  // Fetch blog posts from API
+  const fetchBlogPosts = async () => {
+    setBlogPosts(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      const response = await fetch('/api/blog');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.posts) {
+          // Sanitize blog posts data to prevent date errors
+          const sanitizedPosts = data.data.posts.map((post: any) => ({
+            ...post,
+            createdAt: post.createdAt || new Date().toISOString(),
+            updatedAt: post.updatedAt || new Date().toISOString(),
+            publishedAt: post.publishedAt || null,
+            viewCount: post.viewCount || 0,
+            commentCount: post.commentCount || 0,
+            readTime: post.readTime || 1,
+            tags: post.tags || []
+          }));
+          
+          setBlogPosts({
+            loading: false,
+            error: null,
+            data: sanitizedPosts,
+            isEmpty: sanitizedPosts.length === 0
+          });
+        } else {
+          setBlogPosts({
+            loading: false,
+            error: null,
+            data: [],
+            isEmpty: true
+          });
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+      setBlogPosts({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load blog posts',
+        data: [],
+        isEmpty: false
+      });
+    }
+  };
+
+  // Fetch tracks from API
+  const fetchTracks = async () => {
+    setTracks(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      const response = await fetch('/api/tracks');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.tracks) {
+          // Convert API response to Track format
+          const apiTracks = data.data.tracks.map((track: any) => ({
+            id: track.id,
+            title: track.title,
+            artist: track.artist,
+            album: track.albumTitle || 'Unknown Album',
+            duration: track.duration || '0:00',
+            playCount: track.playCount || 0
+          }));
+          
+          setTracks({
+            loading: false,
+            error: null,
+            data: apiTracks,
+            isEmpty: apiTracks.length === 0
+          });
+        } else {
+          setTracks({
+            loading: false,
+            error: null,
+            data: [],
+            isEmpty: true
+          });
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching tracks:', error);
+      setTracks({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load tracks',
+        data: [],
+        isEmpty: false
+      });
+    }
+  };
+
+  // Load all content on mount
+  useEffect(() => {
     fetchAlbums();
+    fetchPlaylists();
+    fetchBlogPosts();
+    fetchTracks();
   }, []);
 
   const getGreeting = () => {
@@ -226,33 +282,33 @@ export default function HomePage() {
 
   // Filter content based on search query
   const filteredAlbums = useMemo(() => {
-    if (!searchQuery.trim()) return albums;
-    return albums.filter(album =>
+    if (!searchQuery.trim()) return albums.data;
+    return albums.data.filter((album: ContentItem) =>
       album.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       album.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
       album.genre.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery, albums]);
+  }, [searchQuery, albums.data]);
 
   const filteredPlaylists = useMemo(() => {
-    if (!searchQuery.trim()) return madeForYouPlaylists;
-    return madeForYouPlaylists.filter(playlist =>
+    if (!searchQuery.trim()) return playlists.data;
+    return playlists.data.filter((playlist: ContentItem) =>
       playlist.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (playlist.description && playlist.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [searchQuery]);
+  }, [searchQuery, playlists.data]);
 
   const filteredBlogPosts = useMemo(() => {
-    if (!searchQuery.trim()) return blogPosts;
-    return blogPosts.filter(post =>
+    if (!searchQuery.trim()) return blogPosts.data;
+    return blogPosts.data.filter((post: BlogPost) =>
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (post.category && post.category.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [searchQuery]);
+  }, [searchQuery, blogPosts.data]);
 
-  const totalItems = albums.length + madeForYouPlaylists.length + blogPosts.length;
+  const totalItems = albums.data.length + playlists.data.length + blogPosts.data.length;
   const hasSearchResults = searchQuery.trim() && (filteredAlbums.length > 0 || filteredPlaylists.length > 0 || filteredBlogPosts.length > 0);
   const hasNoResults = searchQuery.trim() && filteredAlbums.length === 0 && filteredPlaylists.length === 0 && filteredBlogPosts.length === 0;
 
@@ -289,7 +345,7 @@ export default function HomePage() {
                 className="border border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800 h-8 px-3"
               >
                 <Music className="w-3 h-3 mr-1" />
-                Albums {albums.length}
+                Albums {albums.data.length}
               </Button>
               <Button
                 variant="ghost"
@@ -297,7 +353,7 @@ export default function HomePage() {
                 className="border border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800 h-8 px-3"
               >
                 <List className="w-3 h-3 mr-1" />
-                Playlists {madeForYouPlaylists.length}
+                Playlists {playlists.data.length}
               </Button>
               <Button
                 variant="ghost"
@@ -305,7 +361,7 @@ export default function HomePage() {
                 className="border border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800 h-8 px-3"
               >
                 <FileText className="w-3 h-3 mr-1" />
-                Blogs {blogPosts.length}
+                Blogs {blogPosts.data.length}
               </Button>
             </div>
 
@@ -340,15 +396,33 @@ export default function HomePage() {
               Show all
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filteredAlbums.map((album) => (
-              <ContentCard
-                key={album.id}
-                content={album}
-                onAction={handleContentAction}
-              />
-            ))}
-          </div>
+          
+          {albums.loading ? (
+            <LoadingState count={6} type="card" />
+          ) : albums.error ? (
+            <ErrorState
+              message={albums.error}
+              onRetry={fetchAlbums}
+            />
+          ) : albums.isEmpty ? (
+            <EmptyState
+              icon={Album}
+              title="No albums yet"
+              description="Start building your music library by uploading your first album."
+              actionText="Upload Album"
+              onAction={() => window.location.href = '/create-album'}
+            />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredAlbums.map((album) => (
+                <ContentCard
+                  key={album.id}
+                  content={album}
+                  onAction={handleContentAction}
+                />
+              ))}
+            </div>
+          )}
         </section>
         
         {/* Made for You */}
@@ -359,22 +433,45 @@ export default function HomePage() {
               Show all
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {madeForYouPlaylists.map((playlist) => (
-              <ContentCard
-                key={playlist.id}
-                content={playlist}
-                onAction={handleContentAction}
-              />
-            ))}
-          </div>
+          
+          {playlists.loading ? (
+            <LoadingState count={6} type="card" />
+          ) : playlists.error ? (
+            <ErrorState
+              message={playlists.error}
+              onRetry={fetchPlaylists}
+            />
+          ) : playlists.isEmpty ? (
+            <EmptyState
+              icon={List}
+              title="No playlists yet"
+              description="Create your first playlist to organize your favorite tracks."
+              actionText="Create Playlist"
+              onAction={() => console.log('Create playlist')}
+            />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredPlaylists.map((playlist) => (
+                <ContentCard
+                  key={playlist.id}
+                  content={playlist}
+                  onAction={handleContentAction}
+                />
+              ))}
+            </div>
+          )}
         </section>
         
         {/* Popular Right Now */}
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Popular right now</h2>
           <div className="bg-black/20 rounded-lg p-4">
-            <TrackList />
+            <TrackList 
+              tracks={tracks.data}
+              loading={tracks.loading}
+              error={tracks.error}
+              onRetry={fetchTracks}
+            />
           </div>
         </section>
         
@@ -386,15 +483,33 @@ export default function HomePage() {
               Show all
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {blogPosts.map((post) => (
-              <BlogCard
-                key={post.id}
-                post={post}
-                onAction={handleBlogAction}
-              />
-            ))}
-          </div>
+          
+          {blogPosts.loading ? (
+            <LoadingState count={4} type="blog" />
+          ) : blogPosts.error ? (
+            <ErrorState
+              message={blogPosts.error}
+              onRetry={fetchBlogPosts}
+            />
+          ) : blogPosts.isEmpty ? (
+            <EmptyState
+              icon={BookOpen}
+              title="No blog posts yet"
+              description="Share your thoughts and music insights with the community."
+              actionText="Write Post"
+              onAction={() => console.log('Create blog post')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredBlogPosts.map((post) => (
+                <BlogCard
+                  key={post.id}
+                  post={post}
+                  onAction={handleBlogAction}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

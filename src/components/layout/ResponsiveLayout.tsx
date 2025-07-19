@@ -89,9 +89,22 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
         <div className="flex items-center justify-between px-4 h-full">
           {/* Logo */}
           <Link href="/">
-            <h1 className="text-lg font-bold tracking-tight">
-              <span className="text-orange-500">AUDIOSPHERE</span>
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 flex-shrink-0">
+                <img 
+                  src="/logo1.png" 
+                  alt="AudioSphere Logo" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    // Fallback to SVG logo if PNG fails to load
+                    (e.target as HTMLImageElement).src = "/logo.svg";
+                  }}
+                />
+              </div>
+              <h1 className="text-lg font-bold tracking-tight">
+                <span className="text-orange-500">AUDIOSPHERE</span>
+              </h1>
+            </div>
           </Link>
           
           {/* Hamburger Menu */}

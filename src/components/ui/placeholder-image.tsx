@@ -1,71 +1,87 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface PlaceholderImageProps {
-  src: string;
+  src?: string;
   alt: string;
+  className?: string;
+  fallbackText?: string;
   width?: number;
   height?: number;
-  className?: string;
-  fill?: boolean;
-  sizes?: string;
 }
 
-export function PlaceholderImage({ 
-  src, 
-  alt, 
-  width, 
-  height, 
-  className = '', 
-  fill = false,
-  sizes 
+export function PlaceholderImage({
+  src,
+  alt,
+  className,
+  fallbackText,
+  width = 300,
+  height = 300
 }: PlaceholderImageProps) {
   const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Generate a gradient based on the alt text
-  const generateGradient = (text: string) => {
-    const colors = [
-      'from-purple-500 to-pink-500',
-      'from-blue-500 to-cyan-500', 
-      'from-green-500 to-teal-500',
-      'from-orange-500 to-red-500',
-      'from-indigo-500 to-purple-500',
-      'from-pink-500 to-rose-500'
-    ];
-    
-    const hash = text.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    
-    return colors[Math.abs(hash) % colors.length];
+  // Generate a color based on the text
+  const generateColor = (text: string) => {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = text.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = hash % 360;
+    return `hsl(${hue}, 70%, 50%)`;
   };
 
-  if (imageError || !src) {
+  const displayText = fallbackText || alt || 'No Image';
+  const backgroundColor = generateColor(displayText);
+
+  if (!src || imageError) {
     return (
-      <div 
-        className={`bg-gradient-to-br ${generateGradient(alt)} flex items-center justify-center text-white font-semibold ${className}`}
-        style={!fill ? { width, height } : undefined}
+      <div
+        className={cn(
+          "flex items-center justify-center text-white font-semibold text-center p-4",
+          className
+        )}
+        style={{
+          backgroundColor,
+          width: width,
+          height: height,
+          minHeight: height
+        }}
       >
-        <span className="text-xs text-center p-2 opacity-75">
-          {alt.split(' ').map(word => word[0]).join('').toUpperCase()}
+        <span className="text-sm leading-tight break-words">
+          {displayText}
         </span>
       </div>
     );
   }
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      fill={fill}
-      sizes={sizes}
-      className={className}
-      onError={() => setImageError(true)}
-    />
+    <div className={cn("relative", className)} style={{ width, height }}>
+      {isLoading && (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-white font-semibold animate-pulse"
+          style={{ backgroundColor }}
+        >
+          <span className="text-sm">Loading...</span>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          "object-cover transition-opacity duration-300",
+          isLoading ? "opacity-0" : "opacity-100",
+          className
+        )}
+        style={{ width, height }}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setImageError(true);
+          setIsLoading(false);
+        }}
+      />
+    </div>
   );
 }

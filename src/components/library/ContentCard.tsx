@@ -24,6 +24,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PlaceholderImage } from '@/components/ui/placeholder-image';
 
 import { ContentItem, ContentAction } from '@/types/library';
 import { cn } from '@/lib/utils';
@@ -123,17 +124,17 @@ function getQuickActions(type: ContentItem['type']) {
   return baseActions;
 }
 
-// Get content image
+// Get content image - returns null if no image available
 function getContentImage(content: ContentItem) {
   switch (content.type) {
     case 'album':
-      return content.coverArt || '/album/default-album.jpg';
+      return content.coverArt;
     case 'playlist':
-      return content.coverArt || '/playlists/default-playlist.jpg';
+      return content.coverArt;
     case 'blog':
-      return content.featuredImage || '/blog/default-blog.jpg';
+      return content.featuredImage;
     default:
-      return '/default-content.jpg';
+      return null;
   }
 }
 
@@ -264,10 +265,13 @@ export function ContentCard({
     >
       {/* Enhanced Cover Art / Thumbnail */}
       <div className="aspect-square relative overflow-hidden">
-        <img
+        <PlaceholderImage
           src={getContentImage(content)}
           alt={content.title}
+          fallbackText={content.title}
           className="object-cover w-full h-full transition-all duration-500 group-hover:scale-110"
+          width={300}
+          height={300}
         />
         
         {/* Gradient Overlay */}

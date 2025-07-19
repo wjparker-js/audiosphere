@@ -13,6 +13,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PlaceholderImage } from '@/components/ui/placeholder-image';
 
 import { BlogPost, BlogAction } from '@/types/blog';
 import { cn } from '@/lib/utils';
@@ -58,12 +59,21 @@ export function BlogCard({
   const [showActions, setShowActions] = useState(false);
   const quickActions = getQuickActions();
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return 'Unknown date';
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return 'Unknown date';
+      
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }).format(dateObj);
+    } catch (error) {
+      return 'Unknown date';
+    }
   };
 
   return (
@@ -86,10 +96,13 @@ export function BlogCard({
     >
       {/* Featured Image */}
       <div className="relative overflow-hidden flex-1">
-        <img
-          src={post?.featuredImage || '/blog/default-blog.jpg'}
+        <PlaceholderImage
+          src={post?.featuredImage}
           alt={post?.title || 'Blog post'}
+          fallbackText={post?.title || 'Blog Post'}
           className="object-cover w-full h-full transition-all duration-500 group-hover:scale-110"
+          width={400}
+          height={200}
         />
         
         {/* Gradient Overlay */}

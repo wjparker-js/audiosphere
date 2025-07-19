@@ -4,6 +4,67 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '@/lib/database';
 
+// GET method to fetch tracks
+export async function GET(request: NextRequest) {
+  try {
+    // Simple query without complex joins
+    const [tracks] = await pool.execute(`
+      SELECT 
+        id,
+        title,
+        artist,
+        album_title,
+        track_number,
+        duration,
+        duration_seconds,
+        file_path,
+        play_count,
+        status,
+        created_at,
+        updated_at
+      FROM tracks 
+      WHERE status = 'published'
+      ORDER BY play_count DESC, track_number ASC
+      LIMIT 10
+    `);
+    
+    // Simple data transformation
+    const sanitizedTracks = (tracks as any[]).map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      albumTitle: track.album_title,
+      trackNumber: track.track_number,
+      duration: track.duration,
+      durationSeconds: track.duration_seconds,
+      filePath: track.file_path,
+      playCount: track.play_count || 0,
+      status: track.status,
+      createdAt: track.created_at,
+      updatedAt: track.updated_at
+    }));
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        tracks: sanitizedTracks
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+        requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        version: '1.0.0'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching tracks:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch tracks' },
+      { status: 500 }
+    );
+  }
+}
+
 // Function to get audio duration (simplified - in production you'd use a proper audio library)
 async function getAudioDuration(buffer: Buffer): Promise<number> {
   // This is a simplified implementation

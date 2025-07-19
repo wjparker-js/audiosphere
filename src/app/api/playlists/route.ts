@@ -1,93 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
+import pool from '@/lib/database';
+import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
+import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
 
-// Mock user ID for now - in a real app this would come from authentication
-const MOCK_USER_ID = 'user-1';
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  // Get playlists with track count and user info
+  const [playlists] = await pool.execute(`
+    SELECT 
+      p.id,
+      p.name,
+      p.description,
+      p.is_public,
+      p.user_id,
+      p.created_at,
+      p.updated_at,
+      u.username as owner_name,
+      COUNT(pt.track_id) as track_count
+    FROM playlists p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN playlist_tracks pt ON p.id = pt.playlist_id
+    GROUP BY p.id, p.name, p.description, p.is_public, p.user_id, p.created_at, p.updated_at, u.username
+    ORDER BY p.created_at DESC
+    LIMIT 50
+  `);
+  
+  // Transform and sanitize the data
+  const sanitizedPlaylists = (playlists as any[]).map(playlist => ({
+    id: DataTransformer.toInt(playlist.id),
+    name: DataTransformer.toString(playlist.name),
+    description: playlist.description || null,
+    isPublic: Boolean(playlist.is_public),
+    userId: DataTransformer.toInt(playlist.user_id),
+    trackCount: DataTransformer.toInt(playlist.track_count),
+    ownerName: DataTransformer.toString(playlist.owner_name, 'Unknown User'),
+    createdAt: DataTransformer.parseDate(playlist.created_at) || new Date().toISOString(),
+    updatedAt: DataTransformer.parseDate(playlist.updated_at) || new Date().toISOString()
+  }));
+  
+  return NextResponse.json(
+    createApiResponse(true, { playlists: sanitizedPlaylists })
+  );
+});
 
-// Mock playlists storage - in a real app this would be a database
-let mockPlaylists: any[] = [
-  {
-    id: 'playlist-1',
-    name: 'My Favorites',
-    description: 'My favorite tracks',
-    isPublic: false,
-    userId: MOCK_USER_ID,
-    createdAt: new Date('2024-01-01').toISOString(),
-    trackCount: 0
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const body = await request.json();
+  const { name, description = '', isPublic = false, userId = 1 } = body;
+
+  // Validation using ErrorHandler
+  ErrorHandler.validateRequired(body, ['name']);
+  ErrorHandler.validateTypes(body, {
+    name: 'string',
+    description: 'string',
+    isPublic: 'boolean'
+  });
+  ErrorHandler.validateLength(body, {
+    name: { min: 1, max: 100 },
+    description: { max: 500 }
+  });
+
+  // Check if playlist name already exists for this user
+  const [existingPlaylists] = await pool.execute(
+    'SELECT id FROM playlists WHERE user_id = ? AND LOWER(name) = LOWER(?)',
+    [userId, name.trim()]
+  );
+
+  if (Array.isArray(existingPlaylists) && existingPlaylists.length > 0) {
+    return ErrorHandler.handleValidationError({
+      name: 'ValidationError',
+      message: 'A playlist with this name already exists',
+      field: 'name',
+      value: name
+    } as any);
   }
-];
 
-export async function GET(request: NextRequest) {
-  try {
-    // In a real app, filter by authenticated user
-    const userPlaylists = mockPlaylists.filter(p => p.userId === MOCK_USER_ID);
-    
-    return NextResponse.json({
-      success: true,
-      playlists: userPlaylists
-    });
-  } catch (error) {
-    console.error('Error fetching playlists:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch playlists' },
-      { status: 500 }
-    );
+  // Create new playlist
+  const [result] = await pool.execute(
+    'INSERT INTO playlists (name, description, is_public, user_id) VALUES (?, ?, ?, ?)',
+    [name.trim(), description.trim(), Boolean(isPublic), userId]
+  );
+
+  const insertResult = result as any;
+  const playlistId = insertResult.insertId;
+
+  // Get the created playlist with user info
+  const [newPlaylist] = await pool.execute(
+    `SELECT p.*, u.username as owner_name 
+     FROM playlists p 
+     LEFT JOIN users u ON p.user_id = u.id 
+     WHERE p.id = ?`,
+    [playlistId]
+  );
+
+  const rawPlaylist = Array.isArray(newPlaylist) ? newPlaylist[0] : newPlaylist;
+  
+  if (!rawPlaylist) {
+    return ErrorHandler.handleNotFoundError('Created playlist');
   }
-}
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { name, description = '', isPublic = false } = body;
+  const sanitizedPlaylist = {
+    id: DataTransformer.toInt(rawPlaylist.id),
+    name: DataTransformer.toString(rawPlaylist.name),
+    description: rawPlaylist.description || null,
+    isPublic: Boolean(rawPlaylist.is_public),
+    userId: DataTransformer.toInt(rawPlaylist.user_id),
+    trackCount: 0, // New playlist starts with 0 tracks
+    ownerName: DataTransformer.toString(rawPlaylist.owner_name, 'Unknown User'),
+    createdAt: DataTransformer.parseDate(rawPlaylist.created_at) || new Date().toISOString(),
+    updatedAt: DataTransformer.parseDate(rawPlaylist.updated_at) || new Date().toISOString()
+  };
 
-    // Validation
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Playlist name is required' },
-        { status: 400 }
-      );
-    }
-
-    if (name.trim().length > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Playlist name must be 100 characters or less' },
-        { status: 400 }
-      );
-    }
-
-    // Check if playlist name already exists for this user
-    const existingPlaylist = mockPlaylists.find(
-      p => p.userId === MOCK_USER_ID && p.name.toLowerCase() === name.trim().toLowerCase()
-    );
-
-    if (existingPlaylist) {
-      return NextResponse.json(
-        { success: false, error: 'A playlist with this name already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Create new playlist
-    const newPlaylist = {
-      id: `playlist-${Date.now()}`,
-      name: name.trim(),
-      description: description.trim(),
-      isPublic: Boolean(isPublic),
-      userId: MOCK_USER_ID,
-      createdAt: new Date().toISOString(),
-      trackCount: 0
-    };
-
-    mockPlaylists.push(newPlaylist);
-
-    return NextResponse.json({
-      success: true,
-      playlist: newPlaylist
-    });
-  } catch (error) {
-    console.error('Error creating playlist:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create playlist' },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(
+    createApiResponse(true, { 
+      playlist: sanitizedPlaylist,
+      message: 'Playlist created successfully' 
+    }),
+    { status: 201 }
+  );
+});

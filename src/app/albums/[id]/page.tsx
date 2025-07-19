@@ -261,7 +261,7 @@ export default function AlbumDetailsPage() {
             <h2 className="text-xl font-semibold mb-4">Tracks</h2>
           </div>
           <div 
-            className="px-4 pb-4 overflow-y-auto"
+            className="px-4 pb-4 overflow-y-scroll album-tracklist-scroll"
             style={{ 
               maxHeight: currentTrack ? 'calc(100vh - 500px)' : 'calc(100vh - 440px)',
               minHeight: '200px'
@@ -287,7 +287,7 @@ export default function AlbumDetailsPage() {
 
       {/* Music Player */}
       {currentTrack && (
-        <div className="fixed bottom-0 left-64 right-0 z-50">
+        <div className="fixed bottom-16 md:bottom-0 left-0 md:left-64 right-0 z-50">
           <MusicPlayer
             track={currentTrack}
             isPlaying={currentPlayingId === currentTrack.id}

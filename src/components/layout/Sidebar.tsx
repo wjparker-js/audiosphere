@@ -32,11 +32,17 @@ export default function Sidebar() {
       <div className="p-4">
         <Link href="/">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="AudioSphere Logo" 
-              className="w-8 h-8"
-            />
+            <div className="w-8 h-8 flex-shrink-0">
+              <img 
+                src="/logo1.png" 
+                alt="AudioSphere Logo" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  // Fallback to SVG logo if PNG fails to load
+                  (e.target as HTMLImageElement).src = "/logo.svg";
+                }}
+              />
+            </div>
             <h1 className="text-lg font-bold tracking-tight">
               <span className="text-white">AUDIOSPHERE</span>
             </h1>
