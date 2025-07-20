@@ -4,7 +4,11 @@ import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
 import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
-  // Get playlists with track count and user info
+  // TODO: Get actual user ID from authentication context
+  // For now, using hardcoded user ID 1 (should match library page)
+  const userId = 1;
+  
+  // Get playlists with track count and user info for the current user only
   const [playlists] = await pool.execute(`
     SELECT 
       p.id,
@@ -19,10 +23,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     FROM playlists p
     LEFT JOIN users u ON p.user_id = u.id
     LEFT JOIN playlist_tracks pt ON p.id = pt.playlist_id
+    WHERE p.user_id = ?
     GROUP BY p.id, p.name, p.description, p.is_public, p.user_id, p.created_at, p.updated_at, u.username
     ORDER BY p.created_at DESC
     LIMIT 50
-  `);
+  `, [userId]);
   
   // Transform and sanitize the data
   const sanitizedPlaylists = (playlists as any[]).map(playlist => ({

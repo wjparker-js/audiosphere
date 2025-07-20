@@ -44,6 +44,8 @@ export class LibraryService {
   async getUserLibrary(userId: string, filters: LibraryFilters): Promise<LibraryData> {
     const startTime = performance.now();
     
+    console.log(`[LibraryService] Fetching library for user ${userId} with filters:`, filters);
+    
     // Create cache key
     const cacheKey = `library-${userId}-${JSON.stringify(filters)}`;
     
@@ -51,6 +53,7 @@ export class LibraryService {
     const cachedData = this.cache.get(cacheKey);
     if (cachedData) {
       console.log(`[Cache Hit] Library data loaded from cache in ${(performance.now() - startTime).toFixed(2)}ms`);
+      console.log(`[Cache Hit] Albums count: ${cachedData.albums?.length || 0}`);
       return cachedData;
     }
 
@@ -63,25 +66,40 @@ export class LibraryService {
       limit: filters.limit.toString()
     });
 
-    const response = await fetch(`${this.baseUrl}/users/${userId}/library?${params}`);
+    const url = `${this.baseUrl}/users/${userId}/library?${params}`;
+    console.log(`[LibraryService] Making API call to: ${url}`);
+
+    const response = await fetch(url);
     
     if (!response.ok) {
+      console.error(`[LibraryService] API Error: ${response.status} ${response.statusText}`);
       throw new Error(`Failed to fetch library: ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log(`[LibraryService] API Response:`, {
+      success: result.success,
+      albumsCount: result.data?.albums?.length || 0,
+      playlistsCount: result.data?.playlists?.length || 0,
+      blogPostsCount: result.data?.blogPosts?.length || 0,
+      counts: result.data?.counts
+    });
     
     if (!result.success) {
+      console.error(`[LibraryService] API returned error:`, result.error);
       throw new Error(result.error?.message || 'Failed to fetch library');
     }
 
+    // Convert date strings to Date objects
+    const processedData = this.processLibraryData(result.data);
+
     // Cache the result
-    this.cache.set(cacheKey, result.data, 2 * 60 * 1000); // 2 minutes for library data
+    this.cache.set(cacheKey, processedData, 2 * 60 * 1000); // 2 minutes for library data
 
     const endTime = performance.now();
     console.log(`[API Performance] Library data fetched in ${(endTime - startTime).toFixed(2)}ms`);
 
-    return result.data;
+    return processedData;
   }
 
   async bulkAction(action: BulkAction, contentIds: string[], userId: string): Promise<any> {
@@ -149,5 +167,29 @@ export class LibraryService {
     } catch (error) {
       console.warn('Failed to preload library data:', error);
     }
+  }
+
+  // Convert date strings to Date objects
+  private processLibraryData(data: LibraryData): LibraryData {
+    return {
+      ...data,
+      albums: data.albums.map(album => ({
+        ...album,
+        createdAt: new Date(album.createdAt),
+        updatedAt: new Date(album.updatedAt)
+      })),
+      playlists: data.playlists.map(playlist => ({
+        ...playlist,
+        createdAt: new Date(playlist.createdAt),
+        updatedAt: new Date(playlist.updatedAt),
+        lastPlayed: playlist.lastPlayed ? new Date(playlist.lastPlayed) : undefined
+      })),
+      blogPosts: data.blogPosts.map(post => ({
+        ...post,
+        createdAt: new Date(post.createdAt),
+        updatedAt: new Date(post.updatedAt),
+        publishedAt: post.publishedAt ? new Date(post.publishedAt) : undefined
+      }))
+    };
   }
 }

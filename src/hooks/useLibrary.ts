@@ -12,8 +12,8 @@ import {
   BulkAction
 } from '@/types/library';
 
-// Use mock service for now to prevent API errors
-const libraryService = new MockLibraryService();
+// Use real service to show user-specific content
+const libraryService = new LibraryService();
 
 const initialFilters: LibraryFilters = {
   activeFilter: 'all',
@@ -136,8 +136,21 @@ export function useLibrary(userId: string) {
       );
     }
 
-    // Apply sorting
+    // Apply sorting - maintain content type order (Albums → Playlists → Blogs) when showing all
     content.sort((a, b) => {
+      // If showing all content types, first sort by type to maintain Albums → Playlists → Blogs order
+      if (state.filters.activeFilter === 'all') {
+        const typeOrder = { album: 0, playlist: 1, blog: 2 };
+        const typeComparison = typeOrder[a.type] - typeOrder[b.type];
+        
+        // If different types, use type order
+        if (typeComparison !== 0) {
+          return typeComparison;
+        }
+        
+        // If same type, sort by the selected criteria within that type
+      }
+      
       let comparison = 0;
       
       switch (state.filters.sortBy) {

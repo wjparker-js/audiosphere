@@ -48,16 +48,12 @@ export async function GET(
         FROM albums a 
         LEFT JOIN genres g ON a.genre_id = g.id 
         WHERE a.created_by = ? ${searchCondition}
-        ORDER BY a.${orderBy} ${order}
-        LIMIT ? OFFSET ?
+        ORDER BY a.` + orderBy + ` ` + order + `
+        LIMIT ` + limit + ` OFFSET ` + offset + `
       `;
       
-      const albumResults = await executeQuery(albumQuery, [
-        userId, 
-        ...searchParams_array, 
-        limit, 
-        offset
-      ]) as any[];
+      const albumParams = [userId, ...searchParams_array];
+      const albumResults = await executeQuery(albumQuery, albumParams) as any[];
 
       albums = albumResults.map(row => ({
         id: row.id.toString(),
@@ -82,16 +78,12 @@ export async function GET(
                (SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = p.id) as track_count
         FROM playlists p 
         WHERE p.user_id = ? ${searchCondition}
-        ORDER BY p.${orderBy} ${order}
-        LIMIT ? OFFSET ?
+        ORDER BY p.` + orderBy + ` ` + order + `
+        LIMIT ` + limit + ` OFFSET ` + offset + `
       `;
       
-      const playlistResults = await executeQuery(playlistQuery, [
-        userId, 
-        ...searchParams_array, 
-        limit, 
-        offset
-      ]) as any[];
+      const playlistParams = [userId, ...searchParams_array];
+      const playlistResults = await executeQuery(playlistQuery, playlistParams) as any[];
 
       playlists = playlistResults.map(row => ({
         id: row.id.toString(),
@@ -115,16 +107,12 @@ export async function GET(
                (SELECT COUNT(*) FROM comments WHERE blog_post_id = bp.id) as comment_count
         FROM blog_posts bp 
         WHERE bp.user_id = ? ${searchCondition}
-        ORDER BY bp.${orderBy} ${order}
-        LIMIT ? OFFSET ?
+        ORDER BY bp.` + orderBy + ` ` + order + `
+        LIMIT ` + limit + ` OFFSET ` + offset + `
       `;
       
-      const blogResults = await executeQuery(blogQuery, [
-        userId, 
-        ...searchParams_array, 
-        limit, 
-        offset
-      ]) as any[];
+      const blogParams = [userId, ...searchParams_array];
+      const blogResults = await executeQuery(blogQuery, blogParams) as any[];
 
       blogPosts = blogResults.map(row => ({
         id: row.id.toString(),

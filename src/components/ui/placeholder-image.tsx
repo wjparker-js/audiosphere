@@ -58,7 +58,7 @@ export function PlaceholderImage({
   }
 
   return (
-    <div className={cn("relative", className)} style={{ width, height }}>
+    <div className={cn("relative w-full h-full", className)}>
       {isLoading && (
         <div
           className="absolute inset-0 flex items-center justify-center text-white font-semibold animate-pulse"
@@ -71,11 +71,10 @@ export function PlaceholderImage({
         src={src}
         alt={alt}
         className={cn(
-          "object-cover transition-opacity duration-300",
-          isLoading ? "opacity-0" : "opacity-100",
-          className
+          "w-full h-full object-cover transition-opacity duration-300",
+          isLoading ? "opacity-0" : "opacity-100"
         )}
-        style={{ width, height }}
+        style={{ objectPosition: 'center' }}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setImageError(true);

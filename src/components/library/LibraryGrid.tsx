@@ -5,6 +5,7 @@ import { EmptyLibraryState } from './EmptyLibraryState';
 import { LibraryGridSkeleton } from './LibraryGridSkeleton';
 import { ContentItem, ContentAction, ViewMode, FilterType } from '@/types/library';
 import { cn } from '@/lib/utils';
+import { Music, List, FileText } from 'lucide-react';
 
 interface LibraryGridProps {
   content: ContentItem[];
@@ -43,6 +44,57 @@ export function LibraryGrid({
     );
   }
 
+  // Group content by type when showing all content
+  if (activeFilter === 'all') {
+    const albums = content.filter(item => item.type === 'album');
+    const playlists = content.filter(item => item.type === 'playlist');
+    const blogs = content.filter(item => item.type === 'blog');
+
+    return (
+      <div className="space-y-8">
+        {/* Albums Section */}
+        {albums.length > 0 && (
+          <ContentSection
+            title="Albums"
+            content={albums}
+            viewMode={viewMode}
+            onAction={onAction}
+            selectedItems={selectedItems}
+            onSelectionChange={onSelectionChange}
+            showCheckboxes={showCheckboxes}
+          />
+        )}
+
+        {/* Playlists Section */}
+        {playlists.length > 0 && (
+          <ContentSection
+            title="Playlists"
+            content={playlists}
+            viewMode={viewMode}
+            onAction={onAction}
+            selectedItems={selectedItems}
+            onSelectionChange={onSelectionChange}
+            showCheckboxes={showCheckboxes}
+          />
+        )}
+
+        {/* Blogs Section */}
+        {blogs.length > 0 && (
+          <ContentSection
+            title="Blog Posts"
+            content={blogs}
+            viewMode={viewMode}
+            onAction={onAction}
+            selectedItems={selectedItems}
+            onSelectionChange={onSelectionChange}
+            showCheckboxes={showCheckboxes}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Single content type view (when filtering by specific type)
   if (viewMode === 'list') {
     return (
       <div className="space-y-1">
@@ -218,6 +270,87 @@ function ListViewItem({
           year: 'numeric'
         }).format(content.createdAt)}
       </div>
+    </div>
+  );
+}
+
+// Content Section Component - Displays a section with header and content grid
+function ContentSection({
+  title,
+  content,
+  viewMode,
+  onAction,
+  selectedItems,
+  onSelectionChange,
+  showCheckboxes = false
+}: {
+  title: string;
+  content: ContentItem[];
+  viewMode: ViewMode;
+  onAction: (action: ContentAction, content: ContentItem) => void;
+  selectedItems: string[];
+  onSelectionChange: (itemId: string, selected: boolean) => void;
+  showCheckboxes?: boolean;
+}) {
+  const getSectionIcon = (title: string) => {
+    switch (title.toLowerCase()) {
+      case 'albums':
+        return <Music className="w-5 h-5" />;
+      case 'playlists':
+        return <List className="w-5 h-5" />;
+      case 'blog posts':
+        return <FileText className="w-5 h-5" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Section Header */}
+      <div className="flex items-center gap-3 pb-2 border-b border-gray-700/50">
+        <div className="text-orange-500">
+          {getSectionIcon(title)}
+        </div>
+        <h2 className="text-xl font-semibold text-white">
+          {title}
+        </h2>
+        <span className="text-sm text-gray-400 ml-2">
+          ({content.length})
+        </span>
+      </div>
+
+      {/* Section Content */}
+      {viewMode === 'list' ? (
+        <div className="space-y-1">
+          {content.map((item) => (
+            <ListViewItem
+              key={item.id}
+              content={item}
+              onAction={onAction}
+              selected={selectedItems.includes(item.id)}
+              onSelect={(selected) => onSelectionChange(item.id, selected)}
+              showCheckbox={showCheckboxes}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className={cn(
+          "transition-all duration-300",
+          'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'
+        )}>
+          {content.map((item) => (
+            <ContentCard
+              key={item.id}
+              content={item}
+              onAction={onAction}
+              selected={selectedItems.includes(item.id)}
+              onSelect={(selected) => onSelectionChange(item.id, selected)}
+              showCheckbox={showCheckboxes}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -138,18 +138,27 @@ function getContentImage(content: ContentItem) {
   }
 }
 
-// Get content subtitle
+// Get content subtitle (description/artist info without track count)
 function getContentSubtitle(content: ContentItem) {
   switch (content.type) {
     case 'album':
-      return `${content.artist} • ${content.trackCount} track${content.trackCount !== 1 ? 's' : ''}`;
+      return content.artist || 'Unknown Artist';
     case 'playlist':
-      return `${content.trackCount} track${content.trackCount !== 1 ? 's' : ''}`;
+      return content.description || 'Custom playlist';
     case 'blog':
       return content.excerpt;
     default:
       return '';
   }
+}
+
+// Get track count display text
+function getTrackCountText(content: ContentItem) {
+  if (content.type === 'album' || content.type === 'playlist') {
+    const count = content.trackCount || 0;
+    return count === 1 ? '1 track' : `${count} tracks`;
+  }
+  return null;
 }
 
 // Enhanced Performance Metrics Component
@@ -264,12 +273,12 @@ export function ContentCard({
       onClick={() => onAction('view', content)}
     >
       {/* Enhanced Cover Art / Thumbnail */}
-      <div className="aspect-square relative overflow-hidden">
+      <div className="aspect-square relative overflow-hidden bg-gray-800">
         <PlaceholderImage
           src={getContentImage(content)}
           alt={content.title}
           fallbackText={content.title}
-          className="object-cover w-full h-full transition-all duration-500 group-hover:scale-110"
+          className="object-cover w-full h-full transition-all duration-500 group-hover:scale-105"
           width={300}
           height={300}
         />
@@ -401,8 +410,15 @@ export function ContentCard({
       </div>
 
       {/* Enhanced Content Info */}
-      <div className="p-4 space-y-3">
-        <div>
+      <div className="relative p-4 space-y-3">
+        {/* Track Count - Top Right Corner */}
+        {getTrackCountText(content) && (
+          <div className="absolute top-2 right-2 text-xs text-gray-300 font-medium">
+            {getTrackCountText(content)}
+          </div>
+        )}
+        
+        <div className="pr-16"> {/* Add right padding to avoid overlap with track count */}
           <h3 className="font-semibold text-white truncate mb-1 text-base">
             {content.title}
           </h3>
