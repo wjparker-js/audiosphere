@@ -51,11 +51,11 @@ function getQuickActions() {
   ];
 }
 
-export function BlogCard({
+const BlogCardComponent = ({
   post,
   featured = false,
   onAction
-}: BlogCardProps) {
+}: BlogCardProps) => {
   const [showActions, setShowActions] = useState(false);
   const quickActions = getQuickActions();
 
@@ -233,4 +233,7 @@ export function BlogCard({
       </div>
     </motion.div>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const BlogCard = React.memo(BlogCardComponent);

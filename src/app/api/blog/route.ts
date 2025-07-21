@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/database';
 import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
 import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
+import { blogSchemas } from '@/lib/validation';
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   // Get published blog posts with comment count and user info
@@ -46,29 +47,25 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
-  const { 
-    title, 
-    excerpt, 
-    content, 
-    featuredImage, 
-    status = 'draft',
-    userId = 1 
-  } = body;
+  
+  // Validate request body using Zod schema
+  const validationResult = blogSchemas.create.safeParse(body);
 
-  // Validation using ErrorHandler
-  ErrorHandler.validateRequired(body, ['title', 'content']);
-  ErrorHandler.validateTypes(body, {
-    title: 'string',
-    content: 'string',
-    excerpt: 'string',
-    featuredImage: 'string',
-    status: 'string'
-  });
-  ErrorHandler.validateLength(body, {
-    title: { min: 1, max: 255 },
-    content: { min: 1 },
-    excerpt: { max: 500 }
-  });
+  if (!validationResult.success) {
+    const validationErrors = validationResult.error.errors.map(err => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: err.code.toUpperCase()
+    }));
+    
+    return ErrorHandler.handleValidationError({
+      name: 'ValidationError',
+      message: 'Invalid blog post data provided',
+      details: validationErrors
+    } as any);
+  }
+
+  const { title, excerpt, content, featuredImage, status, userId } = validationResult.data;
 
   // Generate slug from title using DataTransformer
   const baseSlug = DataTransformer.generateSlug(title);

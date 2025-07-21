@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface PlaceholderImageProps {
@@ -67,11 +68,13 @@ export function PlaceholderImage({
           <span className="text-sm">Loading...</span>
         </div>
       )}
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={width}
+        height={height}
         className={cn(
-          "w-full h-full object-cover transition-opacity duration-300",
+          "object-cover transition-opacity duration-300",
           isLoading ? "opacity-0" : "opacity-100"
         )}
         style={{ objectPosition: 'center' }}
@@ -80,6 +83,15 @@ export function PlaceholderImage({
           setImageError(true);
           setIsLoading(false);
         }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        priority={false}
+        placeholder="blur"
+        blurDataURL={`data:image/svg+xml;base64,${Buffer.from(
+          `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="${backgroundColor}"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">${displayText}</text>
+          </svg>`
+        ).toString('base64')}`}
       />
     </div>
   );

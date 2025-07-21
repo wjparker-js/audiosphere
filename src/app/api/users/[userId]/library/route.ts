@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/database';
 import { LibraryData, Album, Playlist, BlogPost, FilterType } from '@/types/library';
+import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
+import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
 
-export async function GET(
+export const GET = withErrorHandling(async (
   request: NextRequest,
   { params }: { params: { userId: string } }
-) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = params.userId;
-    
-    // Parse query parameters
-    const filter = (searchParams.get('filter') as FilterType) || 'all';
-    const search = searchParams.get('search') || '';
-    const sortBy = searchParams.get('sort') || 'date';
-    const sortOrder = searchParams.get('order') || 'desc';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = (page - 1) * limit;
+) => {
+  const { searchParams } = new URL(request.url);
+  const userId = params.userId;
+  
+  // Validate userId parameter
+  if (!userId || isNaN(parseInt(userId))) {
+    return ErrorHandler.handleValidationError({
+      name: 'ValidationError',
+      message: 'Invalid user ID provided',
+      field: 'userId',
+      value: userId
+    } as any);
+  }
+  
+  // Parse query parameters
+  const filter = (searchParams.get('filter') as FilterType) || 'all';
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sort') || 'date';
+  const sortOrder = searchParams.get('order') || 'desc';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const offset = (page - 1) * limit;
 
     // Build WHERE clause for search
     const searchCondition = search 
@@ -162,35 +173,20 @@ export async function GET(
           ? counts.playlists
           : counts.blogs;
 
-    const response: LibraryData = {
-      albums,
-      playlists,
-      blogPosts,
-      pagination: {
-        page,
-        limit,
-        total: totalItems,
-        totalPages: Math.ceil(totalItems / limit)
-      },
-      counts
-    };
+  const response: LibraryData = {
+    albums,
+    playlists,
+    blogPosts,
+    pagination: {
+      page,
+      limit,
+      total: totalItems,
+      totalPages: Math.ceil(totalItems / limit)
+    },
+    counts
+  };
 
-    return NextResponse.json({
-      success: true,
-      data: response
-    });
-
-  } catch (error) {
-    console.error('Library API error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          type: 'server',
-          message: 'Failed to fetch library content'
-        }
-      },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(
+    createApiResponse(true, response)
+  );
+});

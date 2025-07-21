@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/database';
 import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
 import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
+import { playlistSchemas } from '@/lib/validation';
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   // TODO: Get actual user ID from authentication context
@@ -49,19 +50,25 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
-  const { name, description = '', isPublic = false, userId = 1 } = body;
+  
+  // Validate request body using Zod schema
+  const validationResult = playlistSchemas.create.safeParse(body);
 
-  // Validation using ErrorHandler
-  ErrorHandler.validateRequired(body, ['name']);
-  ErrorHandler.validateTypes(body, {
-    name: 'string',
-    description: 'string',
-    isPublic: 'boolean'
-  });
-  ErrorHandler.validateLength(body, {
-    name: { min: 1, max: 100 },
-    description: { max: 500 }
-  });
+  if (!validationResult.success) {
+    const validationErrors = validationResult.error.errors.map(err => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: err.code.toUpperCase()
+    }));
+    
+    return ErrorHandler.handleValidationError({
+      name: 'ValidationError',
+      message: 'Invalid playlist data provided',
+      details: validationErrors
+    } as any);
+  }
+
+  const { name, description, isPublic, userId } = validationResult.data;
 
   // Check if playlist name already exists for this user
   const [existingPlaylists] = await pool.execute(

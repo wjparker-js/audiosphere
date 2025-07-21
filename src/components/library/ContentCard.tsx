@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
@@ -24,8 +24,10 @@ import {
   Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PlaceholderImage } from '@/components/ui/placeholder-image';
+import { OptimizedImage } from '@/components/ui/optimized-image';
+import { useLazyImage } from '@/hooks/useLazyImage';
 import { useAlbumStats } from '@/hooks/useAlbumStats';
+import { useHoverPrefetch } from '@/hooks/usePrefetch';
 
 import { ContentItem, ContentAction } from '@/types/library';
 import { cn } from '@/lib/utils';
@@ -117,17 +119,36 @@ function getTrackCountText(content: ContentItem) {
 
 
 
-export function ContentCard({
+const ContentCardComponent = ({
   content,
   onAction,
   selected = false,
   onSelect,
   showCheckbox = false
-}: ContentCardProps) {
+}: ContentCardProps) => {
   const [showActions, setShowActions] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const quickActions = getQuickActions(content.type);
+  const { handleAlbumHover, handleBlogHover } = useHoverPrefetch();
+
+  // Handle hover prefetching based on content type
+  const handleMouseEnter = useCallback(() => {
+    setShowActions(true);
+    
+    // Prefetch data based on content type
+    if (content.type === 'album' && typeof content.id === 'number') {
+      const cleanup = handleAlbumHover(content.id);
+      return cleanup;
+    } else if (content.type === 'blog' && typeof content.id === 'number') {
+      const cleanup = handleBlogHover(content.id);
+      return cleanup;
+    }
+  }, [content.type, content.id, handleAlbumHover, handleBlogHover]);
+
+  const handleMouseLeave = useCallback(() => {
+    setShowActions(false);
+  }, []);
 
   return (
     <motion.div
@@ -143,19 +164,22 @@ export function ContentCard({
         "h-64", // Smaller height to reclaim space
         selected && "ring-2 ring-orange-500 ring-offset-2 ring-offset-gray-900"
       )}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={() => onAction('view', content)}
     >
       {/* Enhanced Cover Art / Thumbnail */}
       <div className="aspect-square relative overflow-hidden bg-gray-800">
-        <PlaceholderImage
-          src={getContentImage(content)}
+        <OptimizedImage
+          src={getContentImage(content) || '/images/placeholder.svg'}
           alt={content.title}
-          fallbackText={content.title}
-          className="object-cover w-full h-full transition-all duration-500 group-hover:scale-105"
           width={300}
           height={300}
+          className="object-cover w-full h-full transition-all duration-500 group-hover:scale-105"
+          quality={80}
+          lazy={true}
+          priority={false}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 300px"
         />
         
         {/* Gradient Overlay */}
@@ -324,4 +348,7 @@ export function ContentCard({
       />
     </motion.div>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const ContentCard = React.memo(ContentCardComponent);

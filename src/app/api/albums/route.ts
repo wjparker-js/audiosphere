@@ -6,6 +6,7 @@ import pool from '@/lib/database';
 
 import { DataTransformer, createApiResponse } from '@/lib/data-transformer';
 import { ErrorHandler, withErrorHandling } from '@/lib/error-handler';
+import { albumSchemas, validateFile } from '@/lib/validation';
 
 // GET endpoint to fetch albums
 export const GET = withErrorHandling(async () => {
@@ -59,15 +60,30 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   const description = formData.get('description') as string;
   const coverImage = formData.get('coverImage') as File;
   
-  // Validate required fields
-  if (!title || !artist) {
+  // Validate form data using Zod schema
+  const validationResult = albumSchemas.create.safeParse({
+    title,
+    artist,
+    genre,
+    releaseDate,
+    description
+  });
+
+  if (!validationResult.success) {
+    const validationErrors = validationResult.error.errors.map(err => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: err.code.toUpperCase()
+    }));
+    
     return ErrorHandler.handleValidationError({
       name: 'ValidationError',
-      message: 'Title and artist are required',
-      field: !title ? 'title' : 'artist'
+      message: 'Invalid album data provided',
+      details: validationErrors
     } as any);
   }
 
+  // Validate cover image file
   if (!coverImage) {
     return ErrorHandler.handleValidationError({
       name: 'ValidationError',
@@ -76,25 +92,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     } as any);
   }
 
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowedTypes.includes(coverImage.type)) {
-    return ErrorHandler.handleValidationError({
-      name: 'ValidationError',
-      message: 'Invalid file type. Only JPEG, PNG, and WebP are allowed',
-      field: 'coverImage',
-      value: coverImage.type
-    } as any);
-  }
-
-  // Validate file size (10MB)
-  if (coverImage.size > 10 * 1024 * 1024) {
-    return ErrorHandler.handleValidationError({
-      name: 'ValidationError',
-      message: 'File size must be less than 10MB',
-      field: 'coverImage',
-      value: `${Math.round(coverImage.size / 1024 / 1024)}MB`
-    } as any);
+  const fileValidation = await validateFile(coverImage, 'image');
+  if (!fileValidation.success) {
+    return fileValidation.error!;
   }
 
   // Create upload directory structure
