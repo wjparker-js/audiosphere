@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Track, TrackAction, TrackFilterType, TrackSortType } from '@/types/track';
-import { MockTracksService } from '@/services/mock-tracks.service';
 
 export function useLikedTracks() {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -18,10 +17,38 @@ export function useLikedTracks() {
     const loadTracks = async () => {
       setLoading(true);
       try {
-        const likedTracks = await MockTracksService.getLikedTracks();
-        setTracks(likedTracks);
+        // Use real API endpoint instead of mock data
+        const userId = 1; // Mock user ID - replace with actual auth
+        const response = await fetch(`/api/users/${userId}/liked-tracks`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            // Convert API response to Track format
+            const likedTracks: Track[] = data.data.tracks.map((track: any) => ({
+              id: track.id,
+              title: track.title,
+              artist: track.artist,
+              album: track.album,
+              duration: track.duration,
+              plays: track.plays || 0,
+              thumbnail: track.thumbnail || '/api/placeholder/48/48',
+              audioUrl: track.audioUrl,
+              isLiked: true, // All tracks in liked songs are liked
+              addedAt: new Date(track.likedAt || track.createdAt || Date.now())
+            }));
+            setTracks(likedTracks);
+          } else {
+            console.error('Failed to load liked tracks:', data.error);
+            setTracks([]);
+          }
+        } else {
+          console.error('Failed to load liked tracks:', response.status);
+          setTracks([]);
+        }
       } catch (error) {
         console.error('Failed to load liked tracks:', error);
+        setTracks([]);
       } finally {
         setLoading(false);
       }
@@ -53,8 +80,8 @@ export function useLikedTracks() {
         break;
       case 'most-played':
         filtered = filtered.filter(track => {
-          const plays = parseFloat(track.plays.replace(/[^\d.]/g, ''));
-          return plays >= 500; // 500M+ plays
+          const plays = typeof track.plays === 'number' ? track.plays : parseInt(track.plays.toString().replace(/[^\d]/g, ''));
+          return plays >= 10; // 10+ plays
         });
         break;
       // 'artist' and 'album' filters could group by these fields
@@ -76,8 +103,8 @@ export function useLikedTracks() {
           comparison = a.album.localeCompare(b.album);
           break;
         case 'plays':
-          const aPlays = parseFloat(a.plays.replace(/[^\d.]/g, ''));
-          const bPlays = parseFloat(b.plays.replace(/[^\d.]/g, ''));
+          const aPlays = typeof a.plays === 'number' ? a.plays : parseInt(a.plays.toString().replace(/[^\d]/g, ''));
+          const bPlays = typeof b.plays === 'number' ? b.plays : parseInt(b.plays.toString().replace(/[^\d]/g, ''));
           comparison = aPlays - bPlays;
           break;
         case 'recently-added':
@@ -99,7 +126,27 @@ export function useLikedTracks() {
         // Always set the new track as playing (this automatically stops any other playing track)
         setCurrentPlayingId(track.id);
         console.log('Playing:', track.title);
+        
+        // Increment play count via API
+        try {
+          const response = await fetch(`/api/tracks/${track.id}/play`, {
+            method: 'POST',
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              // Update the track's play count in the UI
+              setTracks(prev => prev.map(t => 
+                t.id === track.id ? { ...t, plays: result.data.newPlayCount } : t
+              ));
+            }
+          }
+        } catch (error) {
+          console.error('Error updating play count:', error);
+        }
         break;
+        
       case 'pause':
         // Only pause if this track is actually the currently playing track
         if (currentPlayingId === track.id) {
@@ -107,27 +154,56 @@ export function useLikedTracks() {
           console.log('Paused:', track.title);
         }
         break;
+        
       case 'like':
+        // Since this is the liked songs page, clicking like should unlike the track
         try {
-          const newLikedState = await MockTracksService.toggleLike(track.id);
-          setTracks(prev => prev.map(t => 
-            t.id === track.id ? { ...t, isLiked: newLikedState } : t
-          ));
+          const response = await fetch(`/api/tracks/${track.id}/like`, {
+            method: 'DELETE', // Unlike the track
+          });
+          
+          if (response.ok) {
+            // Remove the track from the liked songs list
+            setTracks(prev => prev.filter(t => t.id !== track.id));
+            console.log('Removed from liked songs:', track.title);
+          } else {
+            const errorData = await response.json();
+            console.error('Failed to unlike track:', errorData.error);
+          }
         } catch (error) {
-          console.error('Failed to toggle like:', error);
+          console.error('Network error unliking track:', error);
         }
         break;
+        
       case 'add-to-playlist':
         console.log('Add to playlist:', track.title);
         break;
+        
       case 'download':
         console.log('Download:', track.title);
         break;
+        
       case 'share':
         console.log('Share:', track.title);
         break;
+        
       case 'remove':
-        console.log('Remove from liked songs:', track.title);
+        // Same as like action - remove from liked songs
+        try {
+          const response = await fetch(`/api/tracks/${track.id}/like`, {
+            method: 'DELETE',
+          });
+          
+          if (response.ok) {
+            setTracks(prev => prev.filter(t => t.id !== track.id));
+            console.log('Removed from liked songs:', track.title);
+          } else {
+            const errorData = await response.json();
+            console.error('Failed to remove track:', errorData.error);
+          }
+        } catch (error) {
+          console.error('Network error removing track:', error);
+        }
         break;
     }
   };

@@ -100,7 +100,6 @@ export function TrackControls({
 
       {/* Sort Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-400">Sort by:</span>
         {sortOptions.map((option) => (
           <Button
             key={option.key}

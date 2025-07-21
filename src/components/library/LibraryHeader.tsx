@@ -56,6 +56,9 @@ export function LibraryHeader({
       {/* Simplified Header - Only Title and Statistics */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+            <Search className="w-6 h-6 text-white" />
+          </div>
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}

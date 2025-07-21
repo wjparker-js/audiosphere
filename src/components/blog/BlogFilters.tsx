@@ -116,7 +116,7 @@ export function BlogFilters({
       animate={{ opacity: 1, y: 0 }}
       className="mb-8"
     >
-      {/* Filter Buttons and Search Container - Desktop: side by side, Mobile: stacked */}
+      {/* Filter Buttons and Search Container - Mobile: stacked, Desktop: side by side */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
         {/* Filter Buttons */}
         <div className="flex gap-0.5 flex-shrink-0">
@@ -138,7 +138,7 @@ export function BlogFilters({
           ))}
         </div>
 
-        {/* Search Field - Right of buttons on desktop, below on mobile */}
+        {/* Search Field - Next line on mobile, same line on desktop */}
         <div className="w-full lg:w-auto lg:min-w-[320px] lg:max-w-lg lg:ml-4">
           <SearchField
             value={searchQuery}

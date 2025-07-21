@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceholderImage } from '@/components/ui/placeholder-image';
+import { useAlbumStats } from '@/hooks/useAlbumStats';
 
 import { ContentItem, ContentAction } from '@/types/library';
 import { cn } from '@/lib/utils';
@@ -54,56 +55,7 @@ function ContentTypeBadge({ type }: { type: ContentItem['type'] }) {
   );
 }
 
-// Status indicator component
-function ContentStatus({ content }: { content: ContentItem }) {
-  if (content.type === 'album' || content.type === 'blog') {
-    const status = content.status;
-    const statusConfig = {
-      published: { color: 'text-green-400', label: 'Published' },
-      draft: { color: 'text-yellow-400', label: 'Draft' },
-      private: { color: 'text-gray-400', label: 'Private' },
-      scheduled: { color: 'text-blue-400', label: 'Scheduled' }
-    };
 
-    const config = statusConfig[status as keyof typeof statusConfig];
-    if (!config) return null;
-
-    return (
-      <span className={cn("text-xs font-medium", config.color)}>
-        {config.label}
-      </span>
-    );
-  }
-
-  if (content.type === 'playlist') {
-    return (
-      <span className="text-xs text-gray-400">
-        {content.isPublic ? 'Public' : 'Private'}
-      </span>
-    );
-  }
-
-  return null;
-}
-
-// Metadata component
-function ContentMetadata({ content }: { content: ContentItem }) {
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-  };
-
-  return (
-    <div className="flex items-center gap-2 text-xs text-gray-400">
-      <Calendar className="w-3 h-3" />
-      <span>{formatDate(content.createdAt)}</span>
-      {/* Removed "played" information for playlists */}
-    </div>
-  );
-}
 
 // Get quick actions based on content type
 function getQuickActions(type: ContentItem['type']) {
@@ -138,11 +90,13 @@ function getContentImage(content: ContentItem) {
   }
 }
 
-// Get content subtitle (description/artist info without track count)
+// Get content subtitle (description/artist info with year for albums)
 function getContentSubtitle(content: ContentItem) {
   switch (content.type) {
     case 'album':
-      return content.artist || 'Unknown Artist';
+      const artist = content.artist || 'Unknown Artist';
+      const year = content.createdAt.getFullYear();
+      return `${artist} ${year}`;
     case 'playlist':
       return content.description || 'Custom playlist';
     case 'blog':
@@ -161,86 +115,7 @@ function getTrackCountText(content: ContentItem) {
   return null;
 }
 
-// Enhanced Performance Metrics Component
-function PerformanceMetrics({ content }: { content: ContentItem }) {
-  const getMetrics = () => {
-    switch (content.type) {
-      case 'album':
-        return [
-          { icon: Play, value: '2.4K', label: 'Plays', color: 'text-green-400' },
-          { icon: Heart, value: '89', label: 'Likes', color: 'text-red-400' },
-          { icon: Star, value: '4.8', label: 'Rating', color: 'text-yellow-400' }
-        ];
-      case 'playlist':
-        return [
-          { icon: Users, value: '156', label: 'Followers', color: 'text-blue-400' },
-          { icon: Play, value: '1.2K', label: 'Plays', color: 'text-green-400' },
-          { icon: TrendingUp, value: '+12%', label: 'Growth', color: 'text-purple-400' }
-        ];
-      case 'blog':
-        return [
-          { icon: Eye, value: content.viewCount.toString(), label: 'Views', color: 'text-cyan-400' },
-          { icon: MessageCircle, value: content.commentCount.toString(), label: 'Comments', color: 'text-orange-400' },
-          { icon: Share2, value: '24', label: 'Shares', color: 'text-pink-400' }
-        ];
-      default:
-        return [];
-    }
-  };
 
-  const metrics = getMetrics();
-
-  return (
-    <div className="grid grid-cols-3 gap-2 mt-3">
-      {metrics.map((metric, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: index * 0.1 }}
-          className="text-center"
-        >
-          <div className={cn("flex items-center justify-center gap-1", metric.color)}>
-            <metric.icon className="w-3 h-3" />
-            <span className="text-xs font-bold">{metric.value}</span>
-          </div>
-          <div className="text-xs text-gray-500">{metric.label}</div>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-// AI Insights Badge
-function AIInsightsBadge({ content }: { content: ContentItem }) {
-  const insights = [
-    { type: 'trending', icon: TrendingUp, color: 'from-green-400 to-emerald-500', text: 'Trending' },
-    { type: 'popular', icon: Star, color: 'from-yellow-400 to-orange-500', text: 'Popular' },
-    { type: 'recommended', icon: Zap, color: 'from-purple-400 to-pink-500', text: 'AI Pick' },
-    { type: 'award', icon: Award, color: 'from-blue-400 to-cyan-500', text: 'Top Rated' }
-  ];
-
-  // Simulate AI insight based on content
-  const insight = insights[Math.floor(Math.random() * insights.length)];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.3 }}
-      className={cn(
-        "absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white",
-        `bg-gradient-to-r ${insight.color}`,
-        "shadow-lg backdrop-blur-sm"
-      )}
-    >
-      <div className="flex items-center gap-1">
-        <insight.icon className="w-3 h-3" />
-        <span>{insight.text}</span>
-      </div>
-    </motion.div>
-  );
-}
 
 export function ContentCard({
   content,
@@ -265,7 +140,7 @@ export function ContentCard({
         "bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm",
         "border border-gray-700/50 hover:border-gray-600/50",
         "shadow-lg hover:shadow-2xl hover:shadow-orange-500/10",
-        "h-72", // Consistent height for all cards
+        "h-64", // Smaller height to reclaim space
         selected && "ring-2 ring-orange-500 ring-offset-2 ring-offset-gray-900"
       )}
       onMouseEnter={() => setShowActions(true)}
@@ -409,76 +284,35 @@ export function ContentCard({
         )}
       </div>
 
-      {/* Enhanced Content Info */}
-      <div className="relative p-4 space-y-3">
-        {/* Track Count - Top Right Corner */}
+      {/* Content Info */}
+      <div className="relative p-3 pb-2">
+        {/* Track Count - Higher up, smaller font */}
         {getTrackCountText(content) && (
-          <div className="absolute top-2 right-2 text-xs text-gray-300 font-medium">
+          <div className="absolute top-1 right-2 text-xs text-gray-400 font-normal">
             {getTrackCountText(content)}
           </div>
         )}
         
-        <div className="pr-16"> {/* Add right padding to avoid overlap with track count */}
-          <h3 className="font-semibold text-white truncate mb-1 text-base">
+        {/* Album/Playlist Title - Single line with truncation */}
+        <div className="mt-3">
+          {/* Track count moved to top right corner */}
+          <h3 className="font-bold text-white mb-1 text-sm leading-tight truncate w-full">
             {content.title}
           </h3>
-          <p className="text-sm text-gray-400 truncate">
-            {getContentSubtitle(content)}
-          </p>
+          
+          {/* Artist Name and Year on same line */}
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-gray-400 truncate flex-1 mr-2">
+              {content.type === 'album' ? (content.artist || 'Unknown Artist') : 
+               content.type === 'playlist' ? (content.description || 'Custom playlist') : 
+               content.excerpt}
+            </p>
+            <span className="text-xs text-gray-500 whitespace-nowrap">
+              {content.createdAt.getFullYear()}
+            </span>
+          </div>
         </div>
-        
-        {/* Status and Metadata Row */}
-        <div className="flex items-center justify-between">
-          <ContentStatus content={content} />
-          <ContentMetadata content={content} />
-        </div>
-
-        {/* Performance Metrics */}
-        <PerformanceMetrics content={content} />
-
-        {/* Removed completion progress bar */}
       </div>
-
-      {/* Detailed Info Panel */}
-      <AnimatePresence>
-        {showDetails && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-t border-gray-700/50 bg-gray-800/50 backdrop-blur-sm"
-          >
-            <div className="p-4 space-y-3">
-              <div className="text-xs text-gray-400 space-y-1">
-                <div className="flex justify-between">
-                  <span>Created:</span>
-                  <span>{new Intl.DateTimeFormat('en-US').format(content.createdAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Modified:</span>
-                  <span>{new Intl.DateTimeFormat('en-US').format(content.updatedAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Size:</span>
-                  <span>2.4 MB</span>
-                </div>
-              </div>
-              
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1">
-                {['Popular', 'Trending', 'Featured'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-1 bg-gray-700/50 text-xs text-gray-300 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Hover Glow Effect */}
       <motion.div

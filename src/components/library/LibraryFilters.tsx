@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { FilterType } from '@/types/library';
+import { FilterType, ViewMode } from '@/types/library';
 import { SearchField } from '@/components/ui/SearchField';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Music, List, FileText, Sparkles } from 'lucide-react';
+import { Music, List, FileText, Sparkles, Grid3X3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Main filter button component with icon and count
 function MainFilterButton({ 
@@ -83,6 +84,8 @@ interface LibraryFiltersProps {
   };
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
   loading?: boolean;
 }
 
@@ -92,6 +95,8 @@ export function LibraryFilters({
   counts,
   searchQuery,
   onSearchChange,
+  viewMode,
+  onViewModeChange,
   loading = false
 }: LibraryFiltersProps) {
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
@@ -151,58 +156,90 @@ export function LibraryFilters({
       animate={{ opacity: 1, y: 0 }}
       className="mb-8"
     >
-      {/* Filter Groups and Search Container - Desktop: side by side, Mobile: stacked */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        {/* Filter Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Main Filter Buttons */}
-          <div className="flex gap-0.5 flex-shrink-0">
-            {mainFilters.map((filter, index) => (
-              <motion.div
-                key={filter.key}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <MainFilterButton
-                  label={filter.label}
-                  count={filter.count}
-                  active={activeFilter === filter.key}
-                  onClick={() => onFilterChange(filter.key)}
-                  icon={filter.icon}
-                />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Quick Filter Buttons */}
-          <div className="flex gap-0.5 flex-shrink-0">
-            {quickFilters.map((filter, index) => (
-              <motion.div
-                key={filter}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-              >
-                <QuickFilterButton
-                  label={filter}
-                  active={activeQuickFilter === filter}
-                  onClick={() => handleQuickFilterClick(filter)}
-                />
-              </motion.div>
-            ))}
-          </div>
+      {/* Main Filter Buttons and Search - Mobile: stacked, Desktop: side by side */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-4">
+        {/* Main Filter Buttons */}
+        <div className="flex gap-0.5 flex-shrink-0">
+          {mainFilters.map((filter, index) => (
+            <motion.div
+              key={filter.key}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <MainFilterButton
+                label={filter.label}
+                count={filter.count}
+                active={activeFilter === filter.key}
+                onClick={() => onFilterChange(filter.key)}
+                icon={filter.icon}
+              />
+            </motion.div>
+          ))}
         </div>
 
-        {/* Search Field - Right of buttons on desktop, below on mobile */}
-        <div className="w-full lg:w-auto lg:min-w-[320px] lg:max-w-lg lg:ml-4">
-          <SearchField
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder="Search your library..."
-            className="w-full"
-          />
+        {/* Search Field and View Mode Toggle - Next line on mobile, same line on desktop */}
+        <div className="flex items-center gap-4 w-full lg:w-auto">
+          {/* Search Field */}
+          <div className="flex-1 lg:min-w-[320px] lg:max-w-lg">
+            <SearchField
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder="Search your library..."
+              className="w-full"
+            />
+          </div>
+
+          {/* View Mode Toggle - Right of search field */}
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewModeChange('grid')}
+              className={cn(
+                "h-8 w-8 p-0",
+                viewMode === 'grid'
+                  ? "bg-orange-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-700"
+              )}
+              title="Grid view"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewModeChange('list')}
+              className={cn(
+                "h-8 w-8 p-0",
+                viewMode === 'list'
+                  ? "bg-orange-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-700"
+              )}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Quick Filter Buttons - Second Row */}
+      <div className="flex gap-0.5 flex-shrink-0">
+        {quickFilters.map((filter, index) => (
+          <motion.div
+            key={filter}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 + index * 0.1 }}
+          >
+            <QuickFilterButton
+              label={filter}
+              active={activeQuickFilter === filter}
+              onClick={() => handleQuickFilterClick(filter)}
+            />
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );

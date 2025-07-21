@@ -1,9 +1,7 @@
 'use client';
 
 import { TrackList } from '@/components/tracks/TrackList';
-import { TrackFilters } from '@/components/tracks/TrackFilters';
 import { TrackControls } from '@/components/tracks/TrackControls';
-import { SearchField } from '@/components/ui/SearchField';
 import { MusicPlayer } from '@/components/music/MusicPlayer';
 import { useLikedTracks } from '@/hooks/useLikedTracks';
 import { Heart } from 'lucide-react';
@@ -31,7 +29,7 @@ export default function LikedSongsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 to-gray-900 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white">
         <div className="container mx-auto px-6 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-700 rounded w-48 mb-4"></div>
@@ -48,7 +46,7 @@ export default function LikedSongsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-900 to-gray-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -63,40 +61,56 @@ export default function LikedSongsPage() {
           </div>
         </div>
 
-        {/* Filters and Search - Desktop: side by side, Mobile: stacked */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <TrackFilters
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-            />
-          </div>
-
-          {/* Search Field - Right of buttons on desktop, below on mobile */}
-          <div className="w-full lg:w-auto lg:min-w-[320px] lg:max-w-lg lg:ml-4">
-            <SearchField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search liked songs..."
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        {/* Controls */}
+        {/* Search and Sort Controls */}
         <div className="mb-6">
-          <TrackControls
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSortChange={handleSortChange}
-            onPlayAll={handlePlayAll}
-            onShuffle={handleShuffle}
-            onDownloadAll={handleDownloadAll}
-            totalTracks={tracks.length}
-          />
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Sort Controls (Quick Filters) */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { key: 'recently-added', label: 'Recently Added' },
+                { key: 'title', label: 'Title' },
+                { key: 'artist', label: 'Artist' },
+                { key: 'album', label: 'Album' },
+                { key: 'plays', label: 'Plays' }
+              ].map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => {
+                    if (sortBy === option.key) {
+                      handleSortChange(option.key, sortOrder === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      handleSortChange(option.key, 'asc');
+                    }
+                  }}
+                  className={`h-8 px-3 text-sm transition-colors flex items-center gap-1 rounded-lg ${
+                    sortBy === option.key
+                      ? "bg-orange-500 text-white"
+                      : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white hover:border-gray-500"
+                  }`}
+                >
+                  {option.label}
+                  {sortBy === option.key && (
+                    sortOrder === 'asc' ? (
+                      <span className="text-xs">↑</span>
+                    ) : (
+                      <span className="text-xs">↓</span>
+                    )
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Field */}
+            <div className="relative flex-1 max-w-md lg:ml-4">
+              <input
+                type="text"
+                placeholder="Search liked songs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-4 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Track List */}

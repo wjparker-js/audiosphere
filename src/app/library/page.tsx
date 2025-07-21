@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LibraryHeader } from '@/components/library/LibraryHeader';
 import { LibraryFilters } from '@/components/library/LibraryFilters';
-import { LibraryControls } from '@/components/library/LibraryControls';
 import { LibraryGrid } from '@/components/library/LibraryGrid';
 import { ContextMenu } from '@/components/library/ContextMenu';
 import { ConfirmationDialog } from '@/components/library/ConfirmationDialog';
@@ -267,18 +266,45 @@ export default function LibraryPage() {
             counts={counts}
             searchQuery={filters.searchQuery}
             onSearchChange={setSearch}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
             loading={loading}
           />
           
-          <LibraryControls
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            sortBy={filters.sortBy}
-            sortOrder={filters.sortOrder}
-            onSortChange={setSort}
-            selectedCount={selectedItems.length}
-            onBulkAction={handleBulkAction}
-          />
+          {/* Bulk Actions (shown when items are selected) */}
+          {selectedItems.length > 0 && (
+            <div className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg mb-6">
+              <span className="text-sm font-medium">
+                {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex gap-1 ml-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleBulkAction('delete')}
+                  className="text-white hover:bg-orange-700 h-7 px-2"
+                >
+                  Delete
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleBulkAction('publish')}
+                  className="text-white hover:bg-orange-700 h-7 px-2"
+                >
+                  Publish
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleBulkAction('unpublish')}
+                  className="text-white hover:bg-orange-700 h-7 px-2"
+                >
+                  Unpublish
+                </Button>
+              </div>
+            </div>
+          )}
           
           <motion.div 
             initial={{ opacity: 0, y: 20 }}

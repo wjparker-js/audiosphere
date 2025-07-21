@@ -115,7 +115,7 @@ export function TrackListItem({
           className={cn(
             "h-8 w-8 p-0",
             track.isLiked 
-              ? "text-red-500 hover:text-red-400" 
+              ? "text-green-500 hover:text-green-400" 
               : "text-gray-400 hover:text-white"
           )}
           title={track.isLiked ? "Remove from liked songs" : "Add to liked songs"}

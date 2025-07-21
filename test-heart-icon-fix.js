@@ -9,11 +9,11 @@ const dbConfig = {
   database: 'audiosphere'
 };
 
-async function testFinalFix() {
+async function testHeartIconFix() {
   let connection;
   
   try {
-    console.log('🔄 Testing Final Track Interactions Fix...\n');
+    console.log('🔄 Testing Heart Icon Fix...\n');
     connection = await mysql.createConnection(dbConfig);
     
     // Test 1: Verify heart icon color logic
@@ -111,8 +111,4 @@ async function testFinalFix() {
 }
 
 // Run the test
-if (require.main === module) {
-  testFinalFix();
-}
-
-module.exports = { testFinalFix };
+testHeartIconFix();

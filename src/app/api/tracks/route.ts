@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '@/lib/database';
+import { parseBuffer } from 'music-metadata';
 
 // GET method to fetch tracks
 export async function GET(request: NextRequest) {
@@ -65,12 +66,24 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Function to get audio duration (simplified - in production you'd use a proper audio library)
+// Function to extract audio duration from buffer using music-metadata
 async function getAudioDuration(buffer: Buffer): Promise<number> {
-  // This is a simplified implementation
-  // In production, you'd use a library like node-ffmpeg or similar
-  // For now, we'll return a default duration and you can enhance this later
-  return 180; // 3 minutes default
+  try {
+    const metadata = await parseBuffer(buffer);
+    
+    // Get duration from metadata
+    const duration = metadata.format.duration;
+    
+    if (duration && duration > 0) {
+      return Math.round(duration); // Return duration in seconds, rounded
+    } else {
+      console.warn('Could not extract duration from audio file, using default');
+      return 180; // 3 minutes default fallback
+    }
+  } catch (error) {
+    console.error('Error extracting audio metadata:', error);
+    return 180; // 3 minutes default fallback
+  }
 }
 
 // Function to format duration from seconds to MM:SS

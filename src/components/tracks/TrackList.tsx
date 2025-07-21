@@ -13,10 +13,10 @@ export function TrackList({ tracks, onAction, currentPlayingId }: TrackListProps
   if (tracks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4">💔</div>
-        <h3 className="text-xl font-semibold text-white mb-2">No liked songs yet</h3>
+        <div className="text-6xl mb-4">🎵</div>
+        <h3 className="text-xl font-semibold text-white mb-2">No tracks found</h3>
         <p className="text-gray-400 mb-6">
-          Start liking songs to build your personal collection
+          This album doesn't have any tracks yet
         </p>
       </div>
     );

@@ -313,7 +313,7 @@ export default function HomePage() {
   const hasNoResults = searchQuery.trim() && filteredAlbums.length === 0 && filteredPlaylists.length === 0 && filteredBlogPosts.length === 0;
 
   return (
-    <div className="h-full bg-gradient-to-b from-green-800 to-green-900 text-white overflow-y-auto">
+    <div className="h-full bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white overflow-y-auto">
       <div className="p-8">
         {/* Header Section - Similar to Library Page */}
         <div className="mb-8">
@@ -322,12 +322,15 @@ export default function HomePage() {
               <Home className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{getGreeting()}</h1>
+              <h1 className="text-3xl font-bold">
+                Home
+                <span className="hidden md:inline"> - {getGreeting().split(' ')[1]}</span>
+              </h1>
               <p className="text-gray-400">Your personalized music experience</p>
             </div>
           </div>
           
-          {/* Quick Stats and Search - Desktop: side by side, Mobile: stacked */}
+          {/* Quick Stats and Search - Mobile: stacked, Desktop: side by side */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
             {/* Quick Stats */}
             <div className="flex flex-wrap gap-2">
@@ -365,7 +368,7 @@ export default function HomePage() {
               </Button>
             </div>
 
-            {/* Search Field - Right of buttons on desktop, below on mobile */}
+            {/* Search Field - Next line on mobile, same line on desktop */}
             <div className="w-full lg:w-auto lg:min-w-[320px] lg:max-w-lg lg:ml-4">
               <SearchField
                 value={searchQuery}
@@ -388,10 +391,10 @@ export default function HomePage() {
           </div>
         )}
         
-        {/* Recently Played */}
+        {/* All Albums */}
         <section className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Recently played</h2>
+            <h2 className="text-2xl font-semibold">All Albums</h2>
             <button className="text-sm text-gray-300 hover:text-white transition-colors">
               Show all
             </button>
@@ -425,10 +428,10 @@ export default function HomePage() {
           )}
         </section>
         
-        {/* Made for You */}
+        {/* Playlists */}
         <section className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Made for you</h2>
+            <h2 className="text-2xl font-semibold">Playlists</h2>
             <button className="text-sm text-gray-300 hover:text-white transition-colors">
               Show all
             </button>
